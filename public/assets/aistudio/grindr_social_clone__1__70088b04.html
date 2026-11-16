@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grindr Web - Proximity Grid</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            yellow: '#F5C518',
+                            yellowHover: '#E0B20F',
+                            dark: '#121212',
+                            card: '#1E1E1E',
+                            surface: '#2A2A2A',
+                            online: '#22C55E',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for sleek dark theme */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121212;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333333;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #F5C518;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-brand-dark text-white font-sans antialiased selection:bg-brand-yellow selection:text-black overflow-x-hidden">
+
+    <!-- ========================================== -->
+    <!-- LOGIN SCREEN OVERLAY                       -->
+    <!-- ========================================== -->
+    <div id="login-screen" class="fixed inset-0 z-50 bg-brand-dark max-w-md mx-auto flex flex-col justify-between p-6 border-x border-zinc-800">
+        <div class="mt-12 text-center space-y-3">
+            <div class="w-16 h-16 bg-brand-yellow rounded-2xl flex items-center justify-center text-black font-extrabold text-3xl mx-auto shadow-lg shadow-brand-yellow/20">
+                <i class="fa-solid fa-mask"></i>
+            </div>
+            <h1 class="text-2xl font-extrabold tracking-tight text-white">GRINDR</h1>
+            <p class="text-xs text-zinc-400">Connect with guys nearby in real-time</p>
+        </div>
+
+        <!-- Login Method Tabs -->
+        <div class="my-auto space-y-4">
+            <div class="grid grid-cols-2 bg-brand-card p-1 rounded-xl border border-zinc-800">
+                <button type="button" id="tab-login-email" onclick="switchLoginMethod('email')" class="py-2 text-xs font-bold rounded-lg bg-brand-yellow text-black transition">
+                    Username / Email
+                </button>
+                <button type="button" id="tab-login-phone" onclick="switchLoginMethod('phone')" class="py-2 text-xs font-bold rounded-lg text-zinc-400 hover:text-white transition">
+                    Phone Number
+                </button>
+            </div>
+
+            <!-- Username / Password Form -->
+            <form id="form-login-email" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Username or Email</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-zinc-500 text-xs"></i>
+                        <input id="login-username" type="text" required placeholder="Enter your username" value="Kasun_CMB"
+                               class="w-full bg-brand-card text-sm text-white rounded-xl pl-10 pr-4 py-3 border border-zinc-700 focus:border-brand-yellow focus:outline-none transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Password</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-3.5 top-3.5 text-zinc-500 text-xs"></i>
+                        <input id="login-password" type="password" required placeholder="••••••••" value="password123"
+                               class="w-full bg-brand-card text-sm text-white rounded-xl pl-10 pr-4 py-3 border border-zinc-700 focus:border-brand-yellow focus:outline-none transition">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs pt-1">
+                    <label class="flex items-center gap-2 text-zinc-400 cursor-pointer">
+                        <input type="checkbox" checked class="accent-brand-yellow rounded"> Remember me
+                    </label>
+                    <button type="button" onclick="showToast('Password reset link sent to your email')" class="text-brand-yellow hover:underline font-semibold">Forgot password?</button>
+                </div>
+
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-brand-yellow text-black font-extrabold text-sm hover:bg-brand-yellowHover transition active:scale-98 shadow-lg shadow-brand-yellow/10 mt-2">
+                    Log In
+                </button>
+            </form>
+
+            <!-- Phone Number & OTP Form -->
+            <form id="form-login-phone" onsubmit="handlePhoneSubmit(event)" class="hidden space-y-4">
+                <div id="phone-step-number">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Mobile Number</label>
+                    <div class="flex gap-2">
+                        <select id="phone-country-code" class="bg-brand-card text-sm text-white font-semibold rounded-xl px-3 py-3 border border-zinc-700 focus:border-brand-yellow focus:outline-none">
+                            <option value="+94">🇱🇰 +94</option>
+                            <option value="+1">🇺🇸 +1</option>
+                            <option value="+44">🇬🇧 +44</option>
+                            <option value="+66">🇹🇭 +66</option>
+                            <option value="+91">🇮🇳 +91</option>
+                            <option value="+61">🇦🇺 +61</option>
+                        </select>
+                        <div class="relative flex-1">
+                            <i class="fa-solid fa-phone absolute left-3.5 top-3.5 text-zinc-500 text-xs"></i>
+                            <input id="login-phone-number" type="tel" placeholder="77 123 4567" value="77 458 9012"
+                                   class="w-full bg-brand-card text-sm text-white rounded-xl pl-10 pr-4 py-3 border border-zinc-700 focus:border-brand-yellow focus:outline-none transition">
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-zinc-500 mt-1.5">We'll send a 6-digit verification code via SMS.</p>
+                </div>
+
+                <div id="phone-step-otp" class="hidden space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-zinc-400">Verification Code</label>
+                        <button type="button" onclick="resetPhoneStep()" class="text-[11px] text-brand-yellow hover:underline font-semibold">Change number</button>
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-shield-halved absolute left-3.5 top-3.5 text-zinc-500 text-xs"></i>
+                        <input id="login-otp-code" type="text" maxlength="6" placeholder="Enter 6-digit OTP"
+                               class="w-full bg-brand-card text-sm text-white tracking-widest font-bold rounded-xl pl-10 pr-4 py-3 border border-zinc-700 focus:border-brand-yellow focus:outline-none transition">
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-zinc-400">
+                        <span id="otp-sent-hint">Sent to +94 77 458 9012</span>
+                        <button type="button" onclick="resendOtpCode()" class="text-brand-yellow hover:underline font-semibold">Resend SMS</button>
+                    </div>
+                </div>
+
+                <button id="phone-submit-btn" type="submit" class="w-full py-3.5 rounded-xl bg-brand-yellow text-black font-extrabold text-sm hover:bg-brand-yellowHover transition active:scale-98 shadow-lg shadow-brand-yellow/10 mt-2">
+                    Send Verification Code
+                </button>
+            </form>
+
+            <div class="relative flex py-1 items-center">
+                <div class="flex-grow border-t border-zinc-800"></div>
+                <span class="flex-shrink mx-3 text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Or continue with</span>
+                <div class="flex-grow border-t border-zinc-800"></div>
+            </div>
+
+            <button type="button" onclick="handleGoogleLogin()" class="w-full py-3 rounded-xl bg-brand-card hover:bg-zinc-800 text-white font-semibold text-xs border border-zinc-700 flex items-center justify-center gap-2.5 transition">
+                <i class="fa-brands fa-google text-brand-yellow"></i> Sign in with Google & Maps Location
+            </button>
+        </div>
+
+        <p class="text-[11px] text-center text-zinc-500">
+            By logging in, you agree to share your approximate proximity on Google Maps.
+        </p>
+    </div>
+
+    <!-- App Container -->
+    <div id="app" class="max-w-md mx-auto min-h-screen bg-brand-dark border-x border-zinc-800 hidden flex-col relative shadow-2xl">
+        
+        <!-- Top Header -->
+        <header class="sticky top-0 z-30 bg-brand-dark/95 backdrop-blur-md border-b border-zinc-800 px-3 py-2.5 flex items-center justify-between">
+            <!-- Current User Profile Trigger -->
+            <button onclick="openMyProfile()" class="relative group flex items-center gap-2 focus:outline-none">
+                <div class="w-9 h-9 rounded-full overflow-hidden border-2 border-brand-yellow p-0.5">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" 
+                         alt="My Profile" 
+                         class="w-full h-full object-cover rounded-full"
+                         onerror="this.src='https://placehold.co/150x150/2A2A2A/F5C518?text=ME'">
+                </div>
+                <span class="w-2.5 h-2.5 rounded-full bg-brand-online border-2 border-brand-dark absolute bottom-0 left-6"></span>
+            </button>
+
+            <!-- Brand Logo / Title -->
+            <div class="flex items-center gap-1.5">
+                <div class="w-6 h-6 bg-brand-yellow rounded-md flex items-center justify-center text-black font-extrabold text-sm shadow-sm">
+                    <i class="fa-solid fa-mask"></i>
+                </div>
+                <span class="font-extrabold tracking-tight text-lg text-white">GRINDR</span>
+            </div>
+
+            <!-- Action Icons -->
+            <div class="flex items-center gap-2">
+                <button onclick="toggleMapModal()" class="text-zinc-300 hover:text-brand-yellow transition p-1.5 rounded-lg hover:bg-zinc-800 flex items-center gap-1 bg-brand-surface/60 border border-zinc-700/60" title="Google Map View">
+                    <i class="fa-solid fa-map-location-dot text-brand-yellow text-sm"></i>
+                    <span class="text-[10px] font-bold">Map</span>
+                </button>
+                <button onclick="toggleFilterModal()" class="text-zinc-300 hover:text-brand-yellow transition p-1.5 rounded-lg hover:bg-zinc-800 relative" title="Filters">
+                    <i class="fa-solid fa-sliders text-lg"></i>
+                    <span id="filterBadge" class="hidden absolute top-1 right-1 w-2 h-2 bg-brand-yellow rounded-full"></span>
+                </button>
+                <button onclick="toggleSearchModal()" class="text-zinc-300 hover:text-brand-yellow transition p-1.5 rounded-lg hover:bg-zinc-800" title="Explore">
+                    <i class="fa-solid fa-earth-americas text-lg"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Nearby Search & Radius Bar -->
+        <div class="bg-brand-dark border-b border-zinc-800/80 px-3 py-2 flex items-center gap-2 sticky top-[57px] z-20">
+            <div class="relative flex-1">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-zinc-400 text-xs"></i>
+                <input id="nearby-search-input" type="text" oninput="handleNearbySearch()" placeholder="Search nearby by name, tag, tribe..." 
+                       class="w-full bg-brand-surface text-xs text-white rounded-full pl-8 pr-7 py-2 border border-zinc-700/80 focus:border-brand-yellow focus:outline-none">
+                <button id="clear-search-btn" onclick="clearNearbySearch()" class="hidden absolute right-2.5 top-2 text-zinc-400 hover:text-white text-xs">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+            </div>
+            <select id="radius-select" onchange="handleNearbySearch()" class="bg-brand-surface text-brand-yellow font-bold text-[11px] rounded-full px-2.5 py-2 border border-zinc-700/80 focus:border-brand-yellow focus:outline-none cursor-pointer">
+                <option value="5000">All Dist</option>
+                <option value="250">&lt; 250m</option>
+                <option value="500">&lt; 500m</option>
+                <option value="1000">&lt; 1km</option>
+                <option value="2000">&lt; 2km</option>
+            </select>
+        </div>
+
+        <!-- Quick Filter Pills -->
+        <div class="bg-brand-dark border-b border-zinc-800/80 px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar sticky top-[106px] z-20">
+            <button onclick="setQuickFilter('all')" id="pill-all" class="filter-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-yellow text-black transition whitespace-nowrap">
+                All Nearby
+            </button>
+            <button onclick="setQuickFilter('online')" id="pill-online" class="filter-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-surface text-zinc-300 hover:bg-zinc-700 transition whitespace-nowrap flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-brand-online"></span> Online
+            </button>
+            <button onclick="setQuickFilter('fresh')" id="pill-fresh" class="filter-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-surface text-zinc-300 hover:bg-zinc-700 transition whitespace-nowrap">
+                Fresh
+            </button>
+            <button onclick="setQuickFilter('favorites')" id="pill-favorites" class="filter-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-surface text-zinc-300 hover:bg-zinc-700 transition whitespace-nowrap flex items-center gap-1">
+                <i class="fa-solid fa-star text-brand-yellow text-[10px]"></i> Favorites
+            </button>
+            <button onclick="setQuickFilter('rightnow')" id="pill-rightnow" class="filter-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-surface text-zinc-300 hover:bg-zinc-700 transition whitespace-nowrap flex items-center gap-1">
+                <i class="fa-solid fa-bolt text-brand-yellow text-[10px]"></i> Right Now
+            </button>
+        </div>
+
+        <!-- Main Content Area (Views: Browse Grid, Inbox, Faves) -->
+        <main class="flex-1 pb-20">
+            
+            <!-- VIEW 1: BROWSE GRID -->
+            <div id="view-browse" class="p-1">
+                <!-- Fresh Faces Horizontal Strip -->
+                <div id="fresh-strip" class="mb-2 px-1 pt-1">
+                    <div class="flex items-center justify-between mb-1.5 px-1">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Fresh Faces</span>
+                        <span class="text-[10px] text-brand-yellow font-semibold">New Nearby</span>
+                    </div>
+                    <div id="fresh-container" class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Main 3-Column Proximity Grid -->
+                <div id="user-grid" class="grid grid-cols-3 gap-1">
+                    <!-- Populated by JS -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden flex-col items-center justify-center py-20 px-6 text-center">
+                    <div class="w-16 h-16 rounded-full bg-brand-surface flex items-center justify-center text-zinc-500 mb-4">
+                        <i class="fa-solid fa-user-slash text-2xl"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-white mb-1">No guys match your filters</h3>
+                    <p class="text-xs text-zinc-400 mb-4">Try adjusting your filters or expanding your search radius to see more profiles.</p>
+                    <button onclick="resetFilters()" class="px-4 py-2 bg-brand-yellow text-black font-bold text-xs rounded-full hover:bg-brand-yellowHover transition">
+                        Reset Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW 2: INBOX / MESSAGES -->
+            <div id="view-inbox" class="hidden">
+                <div class="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
+                    <h2 class="text-base font-bold text-white">Messages</h2>
+                    <span id="unread-header-count" class="text-xs font-semibold text-brand-yellow bg-brand-yellow/10 px-2.5 py-0.5 rounded-full">2 Unread</span>
+                </div>
+                <div id="chat-list" class="divide-y divide-zinc-800/70">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- VIEW 3: FAVORITES -->
+            <div id="view-faves" class="hidden p-3">
+                <div class="mb-3 px-1">
+                    <h2 class="text-base font-bold text-white">Favorites</h2>
+                    <p class="text-xs text-zinc-400">Guys you've starred to keep track of</p>
+                </div>
+                <div id="faves-grid" class="grid grid-cols-3 gap-1.5">
+                    <!-- Populated by JS -->
+                </div>
+                <div id="faves-empty" class="hidden flex-col items-center justify-center py-20 text-center">
+                    <i class="fa-regular fa-star text-3xl text-zinc-600 mb-3"></i>
+                    <p class="text-sm font-semibold text-zinc-300">No favorites yet</p>
+                    <p class="text-xs text-zinc-500 mt-1">Tap the star icon on any profile to save them here.</p>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="fixed bottom-0 w-full max-w-md bg-brand-dark/95 backdrop-blur-md border-t border-zinc-800 flex items-center justify-around py-2 z-30">
+            <button onclick="switchTab('browse')" id="nav-browse" class="nav-btn flex flex-col items-center gap-1 text-brand-yellow transition px-6 py-1">
+                <i class="fa-solid fa-table-cells text-lg"></i>
+                <span class="text-[10px] font-semibold">Browse</span>
+            </button>
+            <button onclick="switchTab('inbox')" id="nav-inbox" class="nav-btn flex flex-col items-center gap-1 text-zinc-400 hover:text-white transition px-6 py-1 relative">
+                <i class="fa-solid fa-comment-dots text-lg"></i>
+                <span class="text-[10px] font-semibold">Inbox</span>
+                <span id="nav-unread-badge" class="absolute top-0.5 right-4 bg-brand-yellow text-black text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center">2</span>
+            </button>
+            <button onclick="switchTab('faves')" id="nav-faves" class="nav-btn flex flex-col items-center gap-1 text-zinc-400 hover:text-white transition px-6 py-1">
+                <i class="fa-solid fa-star text-lg"></i>
+                <span class="text-[10px] font-semibold">Faves</span>
+            </button>
+        </nav>
+
+        <!-- ========================================== -->
+        <!-- GOOGLE MAPS PROXIMITY VIEW MODAL          -->
+        <!-- ========================================== -->
+        <div id="map-modal" class="fixed inset-0 z-50 bg-brand-dark max-w-md mx-auto hidden flex-col">
+            <!-- Map Header -->
+            <div class="bg-brand-card border-b border-zinc-800 px-3 py-2.5 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleMapModal()" class="p-2 text-zinc-300 hover:text-white">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+                            <i class="fa-brands fa-google text-brand-yellow text-xs"></i> Google Maps Nearby
+                        </h3>
+                        <span id="map-city-label" class="text-[10px] text-zinc-400 block">Colombo, Western Province</span>
+                    </div>
+                </div>
+                <button onclick="recenterGoogleMap()" class="px-3 py-1.5 rounded-full bg-brand-surface hover:bg-zinc-700 text-brand-yellow text-xs font-bold flex items-center gap-1.5 border border-zinc-700">
+                    <i class="fa-solid fa-crosshairs"></i> My Pin
+                </button>
+            </div>
+
+            <!-- Interactive Map Area (Google Maps Embed + Live User Pins Overlay) -->
+            <div class="relative flex-1 bg-zinc-900 overflow-hidden">
+                <!-- Embedded Google Map -->
+                <iframe id="google-map-iframe"
+                    class="w-full h-full border-0 filter invert-[90%] hue-rotate-180 contrast-95 opacity-85"
+                    loading="lazy"
+                    allowfullscreen
+                    referrerpolicy="no-referrer-when-downgrade"
+                    src="https://maps.google.com/maps?q=Colombo,%20Sri%20Lanka&t=&z=14&ie=UTF8&iwloc=&output=embed">
+                </iframe>
+
+                <!-- Nearby Radar Overlay & Interactive User Pins -->
+                <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <div class="w-64 h-64 rounded-full border border-brand-yellow/30 bg-brand-yellow/5 animate-pulse"></div>
+                </div>
+
+                <!-- Dynamic Nearby User Pins Container -->
+                <div id="map-user-pins" class="absolute inset-0 pointer-events-none">
+                    <!-- Populated by JS -->
+                </div>
+
+                <!-- Bottom Map User Carousel -->
+                <div class="absolute bottom-4 left-3 right-3 bg-brand-card/95 backdrop-blur-md border border-zinc-700 rounded-2xl p-3 shadow-2xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Guys Pinned Nearby</span>
+                        <a id="open-gmaps-external" href="https://www.google.com/maps/search/?api=1&query=Colombo+Sri+Lanka" target="_blank" class="text-[11px] text-brand-yellow hover:underline font-semibold flex items-center gap-1">
+                            Open in Google Maps <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                        </a>
+                    </div>
+                    <div id="map-carousel" class="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- PROFILE DETAIL MODAL (FULL SCREEN OVERLAY) -->
+        <!-- ========================================== -->
+        <div id="profile-modal" class="fixed inset-0 z-50 bg-brand-dark max-w-md mx-auto hidden flex-col overflow-y-auto animate-fade-in">
+            <!-- Top Floating Bar -->
+            <div class="sticky top-0 z-20 flex items-center justify-between p-3 bg-gradient-to-b from-black/80 to-transparent">
+                <button onclick="closeProfileModal()" class="w-9 h-9 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/80 transition">
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                    <button id="modal-fav-btn" onclick="toggleFavoriteCurrent()" class="w-9 h-9 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/80 transition">
+                        <i class="fa-regular fa-star text-brand-yellow"></i>
+                    </button>
+                    <button onclick="showToast('Profile link copied to clipboard!')" class="w-9 h-9 rounded-full bg-black/50 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/80 transition">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hero Image -->
+            <div class="relative -mt-14 w-full aspect-[3/4] bg-zinc-900">
+                <img id="modal-img" src="" alt="Profile" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-brand-dark via-transparent to-transparent"></div>
+                
+                <!-- Name & Distance Overlay -->
+                <div class="absolute bottom-4 left-4 right-4">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span id="modal-status-dot" class="w-3 h-3 rounded-full bg-brand-online border-2 border-brand-dark"></span>
+                        <span id="modal-status-text" class="text-xs font-semibold text-zinc-300">Online now</span>
+                        <span class="text-zinc-500">•</span>
+                        <span id="modal-distance" class="text-xs font-bold text-brand-yellow">150m away</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <h1 id="modal-name" class="text-2xl font-extrabold text-white">Alex</h1>
+                        <span id="modal-age" class="text-xl font-medium text-zinc-300">27</span>
+                        <i id="modal-verified" class="fa-solid fa-circle-check text-blue-400 text-sm ml-1" title="Verified Profile"></i>
+                    </div>
+                    <p id="modal-headline" class="text-sm text-zinc-300 mt-1 font-medium">"Coffee enthusiast, gym rat & weekend hiker 🏔️"</p>
+                </div>
+            </div>
+
+            <!-- Profile Details Body -->
+            <div class="px-4 py-3 space-y-5 pb-24">
+                
+                <!-- About Me -->
+                <div>
+                    <h4 class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">About Me</h4>
+                    <p id="modal-bio" class="text-sm text-zinc-200 leading-relaxed">
+                        Just moved to the area. Looking to meet chill guys for drinks, workouts, or whatever happens. Say hi!
+                    </p>
+                </div>
+
+                <!-- Tags / Tribes -->
+                <div>
+                    <h4 class="text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-2">Tribes & Interests</h4>
+                    <div id="modal-tags" class="flex flex-wrap gap-1.5">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="bg-brand-card rounded-2xl p-3.5 border border-zinc-800/80 grid grid-cols-2 gap-y-3 gap-x-4 text-xs">
+                    <div>
+                        <span class="text-zinc-500 block text-[10px] uppercase font-bold">Height & Weight</span>
+                        <span id="modal-stats" class="text-zinc-200 font-semibold mt-0.5 block">5'11" • 175 lbs</span>
+                    </div>
+                    <div>
+                        <span class="text-zinc-500 block text-[10px] uppercase font-bold">Body Type</span>
+                        <span id="modal-body" class="text-zinc-200 font-semibold mt-0.5 block">Athletic</span>
+                    </div>
+                    <div>
+                        <span class="text-zinc-500 block text-[10px] uppercase font-bold">Looking For</span>
+                        <span id="modal-looking" class="text-zinc-200 font-semibold mt-0.5 block">Chat, Dates, Friends</span>
+                    </div>
+                    <div>
+                        <span class="text-zinc-500 block text-[10px] uppercase font-bold">Relationship</span>
+                        <span id="modal-rel" class="text-zinc-200 font-semibold mt-0.5 block">Single</span>
+                    </div>
+                </div>
+
+                <!-- Social Links Mock -->
+                <div class="flex items-center gap-3 pt-1">
+                    <span class="px-3 py-1.5 rounded-lg bg-brand-card border border-zinc-800 text-xs text-zinc-300 flex items-center gap-2">
+                        <i class="fa-brands fa-instagram text-pink-500"></i> @alex_colombo
+                    </span>
+                    <span class="px-3 py-1.5 rounded-lg bg-brand-card border border-zinc-800 text-xs text-zinc-300 flex items-center gap-2">
+                        <i class="fa-brands fa-spotify text-green-500"></i> House & Techno
+                    </span>
+                </div>
+            </div>
+
+            <!-- Sticky Bottom Action Bar (Tap & Message) -->
+            <div class="fixed bottom-0 w-full max-w-md bg-brand-dark/95 backdrop-blur-md border-t border-zinc-800 p-3 flex items-center gap-2.5">
+                <!-- Tap Button -->
+                <button onclick="sendTap()" id="tap-btn" class="w-12 h-12 rounded-full bg-brand-surface hover:bg-zinc-700 text-brand-yellow flex items-center justify-center text-xl transition active:scale-90 border border-zinc-700" title="Send a Tap">
+                    <i class="fa-solid fa-fire"></i>
+                </button>
+                <!-- Quick Message Input -->
+                <div class="flex-1 flex items-center bg-brand-surface rounded-full px-4 py-2 border border-zinc-700 focus-within:border-brand-yellow transition">
+                    <input id="modal-quick-msg" type="text" placeholder="Say something..." class="bg-transparent text-sm text-white placeholder-zinc-400 focus:outline-none w-full" onkeypress="if(event.key === 'Enter') startChatFromModal()">
+                    <button onclick="startChatFromModal()" class="ml-2 text-brand-yellow hover:text-brand-yellowHover font-bold text-sm">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- CHAT CONVERSATION MODAL                    -->
+        <!-- ========================================== -->
+        <div id="chat-modal" class="fixed inset-0 z-50 bg-brand-dark max-w-md mx-auto hidden flex-col">
+            <!-- Chat Header -->
+            <div class="bg-brand-card border-b border-zinc-800 px-3 py-2.5 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <button onclick="closeChatModal()" class="p-2 text-zinc-300 hover:text-white">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <div onclick="openProfileFromChat()" class="flex items-center gap-2.5 cursor-pointer">
+                        <div class="relative">
+                            <img id="chat-user-img" src="" class="w-9 h-9 rounded-full object-cover">
+                            <span id="chat-user-online" class="w-2.5 h-2.5 rounded-full bg-brand-online border-2 border-brand-card absolute bottom-0 right-0"></span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <h3 id="chat-user-name" class="text-sm font-bold text-white">Name</h3>
+                                <span id="chat-user-dist" class="text-[10px] text-brand-yellow font-semibold">200m</span>
+                            </div>
+                            <span id="chat-user-status" class="text-[11px] text-zinc-400 block">Online now</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="sendLocationPin()" class="p-2 text-zinc-400 hover:text-brand-yellow transition" title="Share Location">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </button>
+                    <button onclick="showToast('Album access requested')" class="p-2 text-zinc-400 hover:text-brand-yellow transition" title="Share Private Album">
+                        <i class="fa-solid fa-images"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-brand-dark">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Typing Indicator -->
+            <div id="typing-indicator" class="hidden px-4 py-1.5 text-xs text-zinc-400 italic flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 bg-brand-yellow rounded-full animate-bounce"></span>
+                <span class="w-1.5 h-1.5 bg-brand-yellow rounded-full animate-bounce" style="animation-delay: 0.15s"></span>
+                <span class="w-1.5 h-1.5 bg-brand-yellow rounded-full animate-bounce" style="animation-delay: 0.3s"></span>
+                <span id="typing-name" class="ml-1">Alex is typing...</span>
+            </div>
+
+            <!-- Chat Input Box -->
+            <div class="bg-brand-card border-t border-zinc-800 p-3 flex items-center gap-2">
+                <button onclick="sendQuickEmoji('🔥')" class="w-9 h-9 rounded-full bg-brand-surface text-base flex items-center justify-center hover:bg-zinc-700 transition">🔥</button>
+                <button onclick="sendQuickEmoji('👋')" class="w-9 h-9 rounded-full bg-brand-surface text-base flex items-center justify-center hover:bg-zinc-700 transition">👋</button>
+                <div class="flex-1 flex items-center bg-brand-surface rounded-full px-3.5 py-2 border border-zinc-700 focus-within:border-brand-yellow">
+                    <input id="chat-input" type="text" placeholder="Type a message..." class="bg-transparent text-sm text-white placeholder-zinc-400 focus:outline-none w-full" onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                </div>
+                <button onclick="sendChatMessage()" class="w-10 h-10 rounded-full bg-brand-yellow text-black flex items-center justify-center font-bold hover:bg-brand-yellowHover transition active:scale-95">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- FILTER MODAL                               -->
+        <!-- ========================================== -->
+        <div id="filter-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm max-w-md mx-auto hidden flex-col justify-end">
+            <div class="bg-brand-card rounded-t-3xl border-t border-zinc-700 p-5 space-y-5 animate-slide-up">
+                <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+                    <h3 class="text-base font-bold text-white">Filter Grid</h3>
+                    <button onclick="toggleFilterModal()" class="text-zinc-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Online Only Toggle -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-semibold text-white">Online Now</div>
+                        <div class="text-xs text-zinc-400">Only show guys currently active</div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="filter-online-check" class="sr-only peer">
+                        <div class="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-yellow"></div>
+                    </label>
+                </div>
+
+                <!-- Age Range -->
+                <div>
+                    <div class="flex justify-between text-xs font-semibold mb-2">
+                        <span class="text-zinc-300">Maximum Age</span>
+                        <span id="age-val-display" class="text-brand-yellow font-bold">50 yrs</span>
+                    </div>
+                    <input type="range" id="filter-age-range" min="18" max="60" value="50" oninput="document.getElementById('age-val-display').innerText = this.value + ' yrs'" class="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-brand-yellow">
+                </div>
+
+                <!-- Tribe Filter -->
+                <div>
+                    <span class="text-xs font-semibold text-zinc-300 block mb-2">Tribe</span>
+                    <div class="flex flex-wrap gap-2" id="tribe-filters">
+                        <button type="button" onclick="selectTribeFilter('All')" class="tribe-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-yellow text-black">All</button>
+                        <button type="button" onclick="selectTribeFilter('Jock')" class="tribe-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-surface text-zinc-300">Jock</button>
+                        <button type="button" onclick="selectTribeFilter('Twink')" class="tribe-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-surface text-zinc-300">Twink</button>
+                        <button type="button" onclick="selectTribeFilter('Bear')" class="tribe-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-surface text-zinc-300">Bear</button>
+                        <button type="button" onclick="selectTribeFilter('Geek')" class="tribe-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-surface text-zinc-300">Geek</button>
+                        <button type="button" onclick="selectTribeFilter('Otter')" class="tribe-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-surface text-zinc-300">Otter</button>
+                    </div>
+                </div>
+
+                <!-- Apply & Reset Buttons -->
+                <div class="flex gap-3 pt-2">
+                    <button onclick="resetFilters(); toggleFilterModal();" class="w-1/3 py-3 rounded-xl bg-brand-surface text-zinc-300 font-bold text-xs hover:bg-zinc-700 transition">
+                        Reset
+                    </button>
+                    <button onclick="applyAdvancedFilters()" class="w-2/3 py-3 rounded-xl bg-brand-yellow text-black font-extrabold text-xs hover:bg-brand-yellowHover transition">
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- EXPLORE / SEARCH MODAL                     -->
+        <!-- ========================================== -->
+        <div id="search-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm max-w-md mx-auto hidden flex-col justify-start p-4">
+            <div class="bg-brand-card rounded-2xl border border-zinc-700 p-4 space-y-4 mt-10 shadow-2xl">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-earth-americas text-brand-yellow"></i> Explore Locations
+                    </h3>
+                    <button onclick="toggleSearchModal()" class="text-zinc-400 hover:text-white">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-zinc-400 text-xs"></i>
+                    <input id="location-search-input" type="text" placeholder="Search city or neighborhood..." class="w-full bg-brand-surface text-sm text-white rounded-xl pl-9 pr-4 py-2.5 border border-zinc-700 focus:border-brand-yellow focus:outline-none">
+                </div>
+                <div class="space-y-1.5">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Popular Cities</span>
+                    <button onclick="changeLocation('Colombo, Sri Lanka')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-brand-surface text-xs font-medium text-zinc-200 flex items-center justify-between">
+                        <span><i class="fa-solid fa-location-dot text-brand-yellow mr-2"></i> Colombo, Sri Lanka (Current)</span>
+                        <span class="text-[10px] text-brand-online">Active</span>
+                    </button>
+                    <button onclick="changeLocation('London, UK')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-brand-surface text-xs font-medium text-zinc-200 flex items-center justify-between">
+                        <span><i class="fa-solid fa-plane text-zinc-400 mr-2"></i> Soho, London</span>
+                        <span class="text-[10px] text-zinc-500">Explore</span>
+                    </button>
+                    <button onclick="changeLocation('New York, NY')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-brand-surface text-xs font-medium text-zinc-200 flex items-center justify-between">
+                        <span><i class="fa-solid fa-plane text-zinc-400 mr-2"></i> Hell's Kitchen, NYC</span>
+                        <span class="text-[10px] text-zinc-500">Explore</span>
+                    </button>
+                    <button onclick="changeLocation('Bangkok, Thailand')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-brand-surface text-xs font-medium text-zinc-200 flex items-center justify-between">
+                        <span><i class="fa-solid fa-plane text-zinc-400 mr-2"></i> Silom, Bangkok</span>
+                        <span class="text-[10px] text-zinc-500">Explore</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MY PROFILE MODAL                           -->
+        <!-- ========================================== -->
+        <div id="my-profile-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm max-w-md mx-auto hidden flex-col justify-end">
+            <div class="bg-brand-card rounded-t-3xl border-t border-zinc-700 p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-bold text-white">My Profile</h3>
+                    <button onclick="closeMyProfile()" class="text-zinc-400 hover:text-white">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-4">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" class="w-16 h-16 rounded-full object-cover border-2 border-brand-yellow">
+                    <div>
+                        <h4 id="my-profile-display-name" class="text-lg font-bold text-white">Kasun, 26</h4>
+                        <p class="text-xs text-brand-online font-semibold flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-brand-online"></span> Online & Visible
+                        </p>
+                        <p class="text-xs text-zinc-400 mt-0.5">Colombo 03 • Athletic • Jock</p>
+                    </div>
+                </div>
+                <div class="bg-brand-surface p-3 rounded-xl space-y-2">
+                    <label class="text-[10px] font-bold uppercase text-zinc-400">Display Headline</label>
+                    <input id="my-headline-input" type="text" value="Gym, coffee & good vibes ☕💪" class="w-full bg-brand-dark text-xs text-white px-3 py-2 rounded-lg border border-zinc-700 focus:border-brand-yellow focus:outline-none">
+                </div>
+                <div class="flex items-center justify-between bg-brand-surface p-3 rounded-xl">
+                    <span class="text-xs font-semibold text-white">Show Distance on Google Maps</span>
+                    <input type="checkbox" checked class="accent-brand-yellow w-4 h-4">
+                </div>
+                <div class="flex gap-2.5">
+                    <button onclick="handleLogout()" class="w-1/3 py-3 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 font-bold text-xs hover:bg-red-500/30 transition">
+                        Log Out
+                    </button>
+                    <button onclick="saveMyProfile()" class="w-2/3 py-3 rounded-xl bg-brand-yellow text-black font-extrabold text-xs hover:bg-brand-yellowHover transition">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-zinc-900 border border-brand-yellow/60 text-white px-4 py-2.5 rounded-full shadow-2xl text-xs font-semibold flex items-center gap-2 opacity-0 pointer-events-none transition-opacity duration-300 whitespace-nowrap">
+            <i class="fa-solid fa-bolt text-brand-yellow"></i>
+            <span id="toast-msg">Notification</span>
+        </div>
+
+    </div>
+
+    <script>
+        // ==========================================
+        // MOCK DATA FOR PROFILES & CONVERSATIONS
+        // ==========================================
+        const mockUsers = [
+            {
+                id: 1,
+                name: "Liam",
+                age: 25,
+                distance: "85m",
+                distNum: 85,
+                online: true,
+                fresh: true,
+                rightNow: true,
+                verified: true,
+                tribe: "Jock",
+                headline: "Morning runner & coffee addict ☕",
+                bio: "Training for a half marathon. Always down for an iced americano or post-workout smoothie.",
+                stats: "6'0\" • 180 lbs",
+                body: "Athletic",
+                looking: "Dates, Friends, Chat",
+                rel: "Single",
+                tags: ["Fitness", "Running", "Coffee", "Travel"],
+                img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80",
+                favorite: true
+            },
+            {
+                id: 2,
+                name: "Noah",
+                age: 23,
+                distance: "140m",
+                distNum: 140,
+                online: true,
+                fresh: true,
+                rightNow: false,
+                verified: true,
+                tribe: "Twink",
+                headline: "Design student 🎨 vinyl collector",
+                bio: "Into indie music, late night drives, and good sushi. Show me your favorite playlist.",
+                stats: "5'9\" • 145 lbs",
+                body: "Slim",
+                looking: "Chat, Dates",
+                rel: "Single",
+                tags: ["Art", "Music", "Photography", "Sushi"],
+                img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=500&q=80",
+                favorite: false
+            },
+            {
+                id: 3,
+                name: "Marcus",
+                age: 31,
+                distance: "220m",
+                distNum: 220,
+                online: true,
+                fresh: false,
+                rightNow: true,
+                verified: true,
+                tribe: "Bear",
+                headline: "Bearded chef who loves craft beer 🍺",
+                bio: "Work hard, cook harder. Looking for someone laid back who enjoys great food and terrible puns.",
+                stats: "6'2\" • 215 lbs",
+                body: "Stocky",
+                looking: "Dates, Relationship",
+                rel: "Single",
+                tags: ["Cooking", "Craft Beer", "Dogs", "Hiking"],
+                img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=500&q=80",
+                favorite: true
+            },
+            {
+                id: 4,
+                name: "Ethan",
+                age: 28,
+                distance: "350m",
+                distNum: 350,
+                online: false,
+                lastSeen: "12m ago",
+                fresh: false,
+                rightNow: false,
+                verified: false,
+                tribe: "Geek",
+                headline: "Software dev & board game nerd 🎲",
+                bio: "Building apps by day, conquering Catan by night. Looking for fellow geeks or gym buddies.",
+                stats: "5'10\" • 165 lbs",
+                body: "Average",
+                looking: "Friends, Chat, Dates",
+                rel: "Single",
+                tags: ["Gaming", "Tech", "Sci-Fi", "Movies"],
+                img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=500&q=80",
+                favorite: false
+            },
+            {
+                id: 5,
+                name: "Julian",
+                age: 26,
+                distance: "410m",
+                distNum: 410,
+                online: true,
+                fresh: true,
+                rightNow: true,
+                verified: true,
+                tribe: "Otter",
+                headline: "Swimmer & beach bum 🌊",
+                bio: "Catch me at the beach every weekend. Easygoing, open-minded, always smiling.",
+                stats: "5'11\" • 170 lbs",
+                body: "Toned",
+                looking: "Right Now, Friends",
+                rel: "Open",
+                tags: ["Swimming", "Beach", "Surfing", "Sunsets"],
+                img: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=500&q=80",
+                favorite: false
+            },
+            {
+                id: 6,
+                name: "Darius",
+                age: 29,
+                distance: "550m",
+                distNum: 550,
+                online: true,
+                fresh: false,
+                rightNow: false,
+                verified: true,
+                tribe: "Jock",
+                headline: "Personal trainer • Positive energy only",
+                bio: "Focused on growth and fitness. Let's grab a protein shake or hit legs together.",
+                stats: "6'1\" • 195 lbs",
+                body: "Muscular",
+                looking: "Dates, Friends",
+                rel: "Single",
+                tags: ["Gym", "Nutrition", "Basketball", "Travel"],
+                img: "https://images.unsplash.com/photo-1531384441138-2736e62e0919?auto=format&fit=crop&w=500&q=80",
+                favorite: false
+            },
+            {
+                id: 7,
+                name: "Leo",
+                age: 24,
+                distance: "700m",
+                distNum: 700,
+                online: false,
+                lastSeen: "35m ago",
+                fresh: true,
+                rightNow: false,
+                verified: false,
+                tribe: "Twink",
+                headline: "Just visiting for the week! ✈️",
+                bio: "In town for work and exploring the city. Show me the best local spots!",
+                stats: "5'8\" • 140 lbs",
+                body: "Slim",
+                looking: "Friends, Chat",
+                rel: "Single",
+                tags: ["Travel", "Foodie", "Nightlife", "Art"],
+                img: "https://images.unsplash.com/photo-1504257432389-52343af06ae3?auto=format&fit=crop&w=500&q=80",
+                favorite: false
+            },
+            {
+                id: 8,
+                name: "Mateo",
+                age: 33,
+                distance: "890m",
+                distNum: 890,
+                online: true,
+                fresh: false,
+                rightNow: true,
+                verified: true,
+                tribe: "Otter",
+                headline: "Architect • Lover of mid-century modern",
+                bio: "Appreciator of good aesthetics, strong espresso, and meaningful conversations.",
+                stats: "6'0\" • 178 lbs",
+                body: "Athletic",
+                looking: "Dates, Relationship",
+                rel: "Single",
+                tags: ["Architecture", "Design", "Wine", "Jazz"],
+                img: "https://images.unsplash.com/photo-1480455624313-e29b44bbfde1?auto=format&fit=crop&w=500&q=80",
+                favorite: false
+            },
+            {
+                id: 9,
+                name: "Sam",
+                age: 27,
+                distance: "1.1km",
+                distNum: 1100,
+                online: false,
+                lastSeen: "1h ago",
+                fresh: false,
+                rightNow: false,
+                verified: true,
+                tribe: "Geek",
+                headline: "Bookworm & amateur baker 🥐",
+                bio: "Will bake sourdough for compliments. Looking for someone kind and genuine.",
+                stats: "5'9\" • 160 lbs",
+                body: "Average",
+                looking: "Dates, Friends",
+                rel: "Single",
+                tags: ["Baking", "Reading", "Indie Films", "Tea"],
+                img: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=500&q=80",
+                favorite: false
+            },
+            {
+                id: 10,
+                name: "Rohan",
+                age: 30,
+                distance: "1.3km",
+                distNum: 1300,
+                online: true,
+                fresh: false,
+                rightNow: false,
+                verified: true,
+                tribe: "Jock",
+                headline: "Tennis player & weekend traveler 🎾",
+                bio: "Always planning the next trip. Looking for someone adventurous and spontaneous.",
+                stats: "5'11\" • 176 lbs",
+                body: "Athletic",
+                looking: "Dates, Friends",
+                rel: "Single",
+                tags: ["Tennis", "Travel", "Hiking", "Photography"],
+                img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=500&q=80",
+                favorite: false
+            },
+            {
+                id: 11,
+                name: "Caleb",
+                age: 22,
+                distance: "1.5km",
+                distNum: 1500,
+                online: true,
+                fresh: true,
+                rightNow: true,
+                verified: false,
+                tribe: "Twink",
+                headline: "DJ & electronic music producer 🎧",
+                bio: "Spinning house and techno on weekends. Hit me up if you're going out tonight.",
+                stats: "5'10\" • 148 lbs",
+                body: "Slim",
+                looking: "Right Now, Friends",
+                rel: "Single",
+                tags: ["Music", "Clubbing", "Festivals", "Fashion"],
+                img: "https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?auto=format&fit=crop&w=500&q=80",
+                favorite: false
+            },
+            {
+                id: 12,
+                name: "Victor",
+                age: 35,
+                distance: "1.8km",
+                distNum: 1800,
+                online: false,
+                lastSeen: "2h ago",
+                fresh: false,
+                rightNow: false,
+                verified: true,
+                tribe: "Bear",
+                headline: "Gentle giant • Dog dad 🐾",
+                bio: "My golden retriever is my best friend. Looking for someone who loves dogs and camping.",
+                stats: "6'3\" • 225 lbs",
+                body: "Large",
+                looking: "Dates, Relationship",
+                rel: "Single",
+                tags: ["Dogs", "Camping", "BBQ", "Outdoors"],
+                img: "https://images.unsplash.com/photo-1463453091185-61582044d556?auto=format&fit=crop&w=500&q=80",
+                favorite: false
+            }
+        ];
+
+        // Mock Conversations
+        let conversations = [
+            {
+                userId: 1,
+                unread: true,
+                messages: [
+                    { sender: 'them', text: "Hey! Saw you're nearby. How's your morning going?", time: "9:05 AM" },
+                    { sender: 'me', text: "Hey Liam! Pretty good, just grabbing coffee. You?", time: "9:08 AM" },
+                    { sender: 'them', text: "Same here! Heading to the gym in a bit if you wanna join 💪", time: "9:12 AM" }
+                ]
+            },
+            {
+                userId: 3,
+                unread: true,
+                messages: [
+                    { sender: 'them', text: "🔥 Sent you a Tap!", time: "Yesterday", isTap: true },
+                    { sender: 'them', text: "Love your profile pic man, great smile.", time: "Yesterday" }
+                ]
+            },
+            {
+                userId: 5,
+                unread: false,
+                messages: [
+                    { sender: 'me', text: "Hey Julian, cool beach shots!", time: "Mon" },
+                    { sender: 'them', text: "Thanks! Down at Mount Lavinia most weekends.", time: "Mon" }
+                ]
+            }
+        ];
+
+        // State Variables
+        let currentQuickFilter = 'all';
+        let searchQuery = '';
+        let maxRadius = 5000;
+        let currentCity = 'Colombo, Sri Lanka';
+        let loggedInUser = null;
+        let phoneOtpSent = false;
+        let generatedOtp = '';
+        let advancedFilters = {
+            onlineOnly: false,
+            maxAge: 50,
+            tribe: 'All'
+        };
+        let activeProfileUserId = null;
+        let activeChatUserId = null;
+
+        // ==========================================
+        // INITIALIZATION & AUTHENTICATION
+        // ==========================================
+        window.onload = function() {
+            renderFreshStrip();
+            renderGrid();
+            renderInbox();
+            updateUnreadBadges();
+        };
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('login-username').value.trim();
+            const passwordInput = document.getElementById('login-password').value.trim();
+
+            if (!usernameInput || !passwordInput) {
+                showToast('Please enter both username and password');
+                return;
+            }
+
+            loggedInUser = usernameInput;
+            document.getElementById('my-profile-display-name').innerText = `${loggedInUser}, 26`;
+            document.getElementById('login-screen').classList.add('hidden');
+            const appEl = document.getElementById('app');
+            appEl.classList.remove('hidden');
+            appEl.classList.add('flex');
+            showToast(`Welcome back, ${loggedInUser}! 👋`);
+        }
+
+        function handleGoogleLogin() {
+            loggedInUser = 'Kasun (Google)';
+            document.getElementById('my-profile-display-name').innerText = `${loggedInUser}, 26`;
+            document.getElementById('login-screen').classList.add('hidden');
+            const appEl = document.getElementById('app');
+            appEl.classList.remove('hidden');
+            appEl.classList.add('flex');
+            showToast('Connected with Google & Maps 📍');
+        }
+
+        function switchLoginMethod(method) {
+            const emailTab = document.getElementById('tab-login-email');
+            const phoneTab = document.getElementById('tab-login-phone');
+            const emailForm = document.getElementById('form-login-email');
+            const phoneForm = document.getElementById('form-login-phone');
+
+            if (method === 'phone') {
+                phoneTab.classList.add('bg-brand-yellow', 'text-black');
+                phoneTab.classList.remove('text-zinc-400', 'hover:text-white');
+                emailTab.classList.remove('bg-brand-yellow', 'text-black');
+                emailTab.classList.add('text-zinc-400', 'hover:text-white');
+                emailForm.classList.add('hidden');
+                phoneForm.classList.remove('hidden');
+            } else {
+                emailTab.classList.add('bg-brand-yellow', 'text-black');
+                emailTab.classList.remove('text-zinc-400', 'hover:text-white');
+                phoneTab.classList.remove('bg-brand-yellow', 'text-black');
+                phoneTab.classList.add('text-zinc-400', 'hover:text-white');
+                phoneForm.classList.add('hidden');
+                emailForm.classList.remove('hidden');
+            }
+        }
+
+        function handlePhoneSubmit(e) {
+            e.preventDefault();
+            const countryCode = document.getElementById('phone-country-code').value;
+            const phoneNum = document.getElementById('login-phone-number').value.trim();
+
+            if (!phoneNum || phoneNum.replace(/\D/g, '').length < 7) {
+                showToast('Please enter a valid mobile number');
+                return;
+            }
+
+            if (!phoneOtpSent) {
+                // Step 1: Send OTP
+                generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
+                phoneOtpSent = true;
+                document.getElementById('phone-step-number').classList.add('hidden');
+                document.getElementById('phone-step-otp').classList.remove('hidden');
+                document.getElementById('otp-sent-hint').innerText = `Sent to ${countryCode} ${phoneNum}`;
+                document.getElementById('login-otp-code').value = generatedOtp;
+                document.getElementById('phone-submit-btn').innerText = 'Verify & Sign In';
+                showToast(`SMS Code sent: ${generatedOtp} 📲`);
+            } else {
+                // Step 2: Verify OTP
+                const enteredOtp = document.getElementById('login-otp-code').value.trim();
+                if (enteredOtp.length !== 6) {
+                    showToast('Please enter the 6-digit verification code');
+                    return;
+                }
+                loggedInUser = `${countryCode} ${phoneNum}`;
+                document.getElementById('my-profile-display-name').innerText = `Kasun (${countryCode}), 26`;
+                document.getElementById('login-screen').classList.add('hidden');
+                const appEl = document.getElementById('app');
+                appEl.classList.remove('hidden');
+                appEl.classList.add('flex');
+                resetPhoneStep();
+                showToast('Phone verified! Welcome to Grindr 📱');
+            }
+        }
+
+        function resendOtpCode() {
+            generatedOtp = String(Math.floor(100000 + Math.random() * 900000));
+            document.getElementById('login-otp-code').value = generatedOtp;
+            showToast(`New SMS Code sent: ${generatedOtp} 📲`);
+        }
+
+        function resetPhoneStep() {
+            phoneOtpSent = false;
+            generatedOtp = '';
+            document.getElementById('phone-step-otp').classList.add('hidden');
+            document.getElementById('phone-step-number').classList.remove('hidden');
+            document.getElementById('login-otp-code').value = '';
+            document.getElementById('phone-submit-btn').innerText = 'Send Verification Code';
+        }
+
+        function handleLogout() {
+            closeMyProfile();
+            loggedInUser = null;
+            const appEl = document.getElementById('app');
+            appEl.classList.add('hidden');
+            appEl.classList.remove('flex');
+            document.getElementById('login-screen').classList.remove('hidden');
+            showToast('Logged out successfully');
+        }
+
+        // ==========================================
+        // NEARBY SEARCH & GOOGLE MAPS INTEGRATION
+        // ==========================================
+        function handleNearbySearch() {
+            const input = document.getElementById('nearby-search-input');
+            const clearBtn = document.getElementById('clear-search-btn');
+            const radiusSelect = document.getElementById('radius-select');
+
+            searchQuery = input.value.trim().toLowerCase();
+            maxRadius = parseInt(radiusSelect.value);
+
+            if (searchQuery.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            switchTab('browse');
+            renderGrid();
+        }
+
+        function clearNearbySearch() {
+            document.getElementById('nearby-search-input').value = '';
+            document.getElementById('clear-search-btn').classList.add('hidden');
+            searchQuery = '';
+            renderGrid();
+        }
+
+        function toggleMapModal() {
+            const modal = document.getElementById('map-modal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+            if (!modal.classList.contains('hidden')) {
+                renderMapPinsAndCarousel();
+            }
+        }
+
+        function recenterGoogleMap() {
+            const iframe = document.getElementById('google-map-iframe');
+            iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(currentCity)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+            showToast(`Centered on ${currentCity} 📍`);
+        }
+
+        function renderMapPinsAndCarousel() {
+            const pinsContainer = document.getElementById('map-user-pins');
+            const carousel = document.getElementById('map-carousel');
+            const nearbyUsers = getFilteredUsers().slice(0, 6);
+
+            // Simulated map coordinates around center
+            const pinPositions = [
+                { top: '28%', left: '25%' },
+                { top: '35%', left: '68%' },
+                { top: '52%', left: '32%' },
+                { top: '46%', left: '72%' },
+                { top: '22%', left: '50%' },
+                { top: '58%', left: '55%' }
+            ];
+
+            pinsContainer.innerHTML = nearbyUsers.map((user, index) => {
+                const pos = pinPositions[index % pinPositions.length];
+                return `
+                    <button onclick="toggleMapModal(); openProfile(${user.id});" 
+                            style="top: ${pos.top}; left: ${pos.left};"
+                            class="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 group flex flex-col items-center focus:outline-none">
+                        <div class="relative w-11 h-11 rounded-full border-2 border-brand-yellow shadow-lg overflow-hidden bg-brand-card group-hover:scale-110 transition">
+                            <img src="${user.img}" alt="${user.name}" class="w-full h-full object-cover">
+                        </div>
+                        <span class="mt-1 px-2 py-0.5 rounded-full bg-black/85 text-white text-[10px] font-bold border border-zinc-700 whitespace-nowrap shadow">
+                            ${user.name} • ${user.distance}
+                        </span>
+                    </button>
+                `;
+            }).join('');
+
+            carousel.innerHTML = nearbyUsers.map(user => `
+                <div onclick="toggleMapModal(); openProfile(${user.id});" class="flex-shrink-0 w-36 bg-brand-surface/90 border border-zinc-700 hover:border-brand-yellow rounded-xl p-2 flex items-center gap-2 cursor-pointer transition">
+                    <img src="${user.img}" alt="${user.name}" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-white truncate">${user.name}, ${user.age}</div>
+                        <div class="text-[10px] text-brand-yellow font-semibold">${user.distance}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
+        // RENDER FUNCTIONS
+        // ==========================================
+        function renderFreshStrip() {
+            const container = document.getElementById('fresh-container');
+            const freshUsers = mockUsers.filter(u => u.fresh);
+            container.innerHTML = freshUsers.map(user => `
+                <div onclick="openProfile(${user.id})" class="relative flex-shrink-0 w-20 h-24 rounded-xl overflow-hidden cursor-pointer group border border-zinc-800 hover:border-brand-yellow transition">
+                    <img src="${user.img}" alt="${user.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://placehold.co/200x250/1E1E1E/F5C518?text=${user.name}'">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
+                    <span class="absolute top-1.5 right-1.5 bg-brand-yellow text-black text-[8px] font-extrabold px-1.5 py-0.2 rounded-sm uppercase">New</span>
+                    <div class="absolute bottom-1.5 left-1.5 right-1 flex items-center gap-1">
+                        ${user.online ? '<span class="w-1.5 h-1.5 rounded-full bg-brand-online flex-shrink-0"></span>' : ''}
+                        <span class="text-[11px] font-bold text-white truncate">${user.name}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getFilteredUsers() {
+            return mockUsers.filter(user => {
+                // Nearby Search Query (name, tribe, headline, tags)
+                if (searchQuery) {
+                    const matchName = user.name.toLowerCase().includes(searchQuery);
+                    const matchTribe = user.tribe.toLowerCase().includes(searchQuery);
+                    const matchHeadline = user.headline.toLowerCase().includes(searchQuery);
+                    const matchTags = user.tags.some(t => t.toLowerCase().includes(searchQuery));
+                    if (!matchName && !matchTribe && !matchHeadline && !matchTags) return false;
+                }
+
+                // Distance Radius Filter
+                if (user.distNum > maxRadius) return false;
+
+                // Quick Pills
+                if (currentQuickFilter === 'online' && !user.online) return false;
+                if (currentQuickFilter === 'fresh' && !user.fresh) return false;
+                if (currentQuickFilter === 'favorites' && !user.favorite) return false;
+                if (currentQuickFilter === 'rightnow' && !user.rightNow) return false;
+
+                // Advanced Filters
+                if (advancedFilters.onlineOnly && !user.online) return false;
+                if (user.age > advancedFilters.maxAge) return false;
+                if (advancedFilters.tribe !== 'All' && user.tribe !== advancedFilters.tribe) return false;
+
+                return true;
+            });
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('user-grid');
+            const emptyState = document.getElementById('empty-state');
+            const freshStrip = document.getElementById('fresh-strip');
+            const filtered = getFilteredUsers();
+
+            // Show fresh strip only on default 'all' view without search
+            if (currentQuickFilter === 'all' && !searchQuery && maxRadius === 5000 && !advancedFilters.onlineOnly && advancedFilters.tribe === 'All') {
+                freshStrip.classList.remove('hidden');
+            } else {
+                freshStrip.classList.add('hidden');
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('flex');
+
+            grid.innerHTML = filtered.map(user => `
+                <div onclick="openProfile(${user.id})" class="relative aspect-[3/4] bg-brand-card rounded-lg overflow-hidden cursor-pointer group">
+                    <img src="${user.img}" alt="${user.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://placehold.co/300x400/1E1E1E/F5C518?text=${user.name}'">
+                    
+                    <!-- Subtle bottom gradient for text legibility -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent"></div>
+                    
+                    <!-- Top Indicators -->
+                    <div class="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between">
+                        ${user.rightNow ? '<span class="bg-black/60 backdrop-blur-sm text-brand-yellow text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5"><i class="fa-solid fa-bolt text-[8px]"></i> Now</span>' : '<span></span>'}
+                        ${user.favorite ? '<i class="fa-solid fa-star text-brand-yellow text-xs drop-shadow"></i>' : ''}
+                    </div>
+
+                    <!-- Bottom Name & Online Status -->
+                    <div class="absolute bottom-1.5 left-2 right-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full flex-shrink-0 ${user.online ? 'bg-brand-online shadow-[0_0_6px_#22C55E]' : 'bg-zinc-500'}"></span>
+                            <span class="text-xs font-bold text-white truncate drop-shadow">${user.name}</span>
+                        </div>
+                        <span class="text-[10px] text-zinc-300 font-medium block pl-3.5">${user.distance}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderFavesGrid() {
+            const grid = document.getElementById('faves-grid');
+            const empty = document.getElementById('faves-empty');
+            const faves = mockUsers.filter(u => u.favorite);
+
+            if (faves.length === 0) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+                empty.classList.add('flex');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            empty.classList.remove('flex');
+
+            grid.innerHTML = faves.map(user => `
+                <div onclick="openProfile(${user.id})" class="relative aspect-[3/4] bg-brand-card rounded-lg overflow-hidden cursor-pointer group">
+                    <img src="${user.img}" alt="${user.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent"></div>
+                    <i class="fa-solid fa-star text-brand-yellow text-xs absolute top-2 right-2 drop-shadow"></i>
+                    <div class="absolute bottom-1.5 left-2 right-1.5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full ${user.online ? 'bg-brand-online' : 'bg-zinc-500'}"></span>
+                            <span class="text-xs font-bold text-white truncate">${user.name}</span>
+                        </div>
+                        <span class="text-[10px] text-zinc-300 block pl-3.5">${user.distance}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderInbox() {
+            const list = document.getElementById('chat-list');
+            list.innerHTML = conversations.map(conv => {
+                const user = mockUsers.find(u => u.id === conv.userId);
+                if (!user) return '';
+                const lastMsg = conv.messages[conv.messages.length - 1];
+                return `
+                    <div onclick="openChat(${user.id})" class="px-4 py-3 flex items-center gap-3 hover:bg-brand-card/60 cursor-pointer transition ${conv.unread ? 'bg-brand-card/30' : ''}">
+                        <div class="relative flex-shrink-0">
+                            <img src="${user.img}" alt="${user.name}" class="w-12 h-12 rounded-full object-cover">
+                            <span class="w-3 h-3 rounded-full border-2 border-brand-dark absolute bottom-0 right-0 ${user.online ? 'bg-brand-online' : 'bg-zinc-500'}"></span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-0.5">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-sm font-bold text-white truncate">${user.name}</span>
+                                    <span class="text-[10px] text-zinc-400 font-medium">${user.distance}</span>
+                                </div>
+                                <span class="text-[10px] ${conv.unread ? 'text-brand-yellow font-bold' : 'text-zinc-500'}">${lastMsg.time}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs truncate ${conv.unread ? 'text-white font-semibold' : 'text-zinc-400'}">
+                                    ${lastMsg.sender === 'me' ? 'You: ' : ''}${lastMsg.text}
+                                </p>
+                                ${conv.unread ? '<span class="w-2.5 h-2.5 rounded-full bg-brand-yellow flex-shrink-0 ml-2"></span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateUnreadBadges() {
+            const unreadCount = conversations.filter(c => c.unread).length;
+            const navBadge = document.getElementById('nav-unread-badge');
+            const headerBadge = document.getElementById('unread-header-count');
+
+            if (unreadCount > 0) {
+                navBadge.innerText = unreadCount;
+                navBadge.classList.remove('hidden');
+                headerBadge.innerText = `${unreadCount} Unread`;
+                headerBadge.classList.remove('hidden');
+            } else {
+                navBadge.classList.add('hidden');
+                headerBadge.classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // NAVIGATION & FILTER ACTIONS
+        // ==========================================
+        function switchTab(tab) {
+            // Hide all views
+            document.getElementById('view-browse').classList.add('hidden');
+            document.getElementById('view-inbox').classList.add('hidden');
+            document.getElementById('view-faves').classList.add('hidden');
+
+            // Reset nav colors
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-brand-yellow');
+                btn.classList.add('text-zinc-400');
+            });
+
+            // Show selected view
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tab}`);
+            activeBtn.classList.remove('text-zinc-400');
+            activeBtn.classList.add('text-brand-yellow');
+
+            if (tab === 'faves') renderFavesGrid();
+            if (tab === 'inbox') renderInbox();
+        }
+
+        function setQuickFilter(filter) {
+            currentQuickFilter = filter;
+            switchTab('browse');
+
+            // Update pill styling
+            document.querySelectorAll('.filter-pill').forEach(pill => {
+                pill.classList.remove('bg-brand-yellow', 'text-black');
+                pill.classList.add('bg-brand-surface', 'text-zinc-300');
+            });
+            const activePill = document.getElementById(`pill-${filter}`);
+            activePill.classList.remove('bg-brand-surface', 'text-zinc-300');
+            activePill.classList.add('bg-brand-yellow', 'text-black');
+
+            renderGrid();
+        }
+
+        function toggleFilterModal() {
+            const modal = document.getElementById('filter-modal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+        }
+
+        function selectTribeFilter(tribe) {
+            advancedFilters.tribe = tribe;
+            document.querySelectorAll('.tribe-btn').forEach(btn => {
+                if (btn.innerText === tribe) {
+                    btn.classList.remove('bg-brand-surface', 'text-zinc-300');
+                    btn.classList.add('bg-brand-yellow', 'text-black');
+                } else {
+                    btn.classList.remove('bg-brand-yellow', 'text-black');
+                    btn.classList.add('bg-brand-surface', 'text-zinc-300');
+                }
+            });
+        }
+
+        function applyAdvancedFilters() {
+            advancedFilters.onlineOnly = document.getElementById('filter-online-check').checked;
+            advancedFilters.maxAge = parseInt(document.getElementById('filter-age-range').value);
+
+            const hasFilter = advancedFilters.onlineOnly || advancedFilters.maxAge < 50 || advancedFilters.tribe !== 'All';
+            const badge = document.getElementById('filterBadge');
+            if (hasFilter) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+
+            toggleFilterModal();
+            renderGrid();
+            showToast('Filters applied');
+        }
+
+        function resetFilters() {
+            currentQuickFilter = 'all';
+            searchQuery = '';
+            maxRadius = 5000;
+            document.getElementById('nearby-search-input').value = '';
+            document.getElementById('clear-search-btn').classList.add('hidden');
+            document.getElementById('radius-select').value = '5000';
+            advancedFilters = { onlineOnly: false, maxAge: 50, tribe: 'All' };
+            document.getElementById('filter-online-check').checked = false;
+            document.getElementById('filter-age-range').value = 50;
+            document.getElementById('age-val-display').innerText = '50 yrs';
+            selectTribeFilter('All');
+            document.getElementById('filterBadge').classList.add('hidden');
+            setQuickFilter('all');
+        }
+
+        // ==========================================
+        // PROFILE MODAL LOGIC
+        // ==========================================
+        function openProfile(userId) {
+            const user = mockUsers.find(u => u.id === userId);
+            if (!user) return;
+            activeProfileUserId = userId;
+
+            document.getElementById('modal-img').src = user.img;
+            document.getElementById('modal-name').innerText = user.name;
+            document.getElementById('modal-age').innerText = user.age;
+            document.getElementById('modal-distance').innerText = `${user.distance} away`;
+            document.getElementById('modal-headline').innerText = `"${user.headline}"`;
+            document.getElementById('modal-bio').innerText = user.bio;
+            document.getElementById('modal-stats').innerText = user.stats;
+            document.getElementById('modal-body').innerText = user.body;
+            document.getElementById('modal-looking').innerText = user.looking;
+            document.getElementById('modal-rel').innerText = user.rel;
+
+            // Online Status
+            const dot = document.getElementById('modal-status-dot');
+            const statusText = document.getElementById('modal-status-text');
+            if (user.online) {
+                dot.className = "w-3 h-3 rounded-full bg-brand-online border-2 border-brand-dark";
+                statusText.innerText = "Online now";
+                statusText.className = "text-xs font-semibold text-brand-online";
+            } else {
+                dot.className = "w-3 h-3 rounded-full bg-zinc-500 border-2 border-brand-dark";
+                statusText.innerText = `Offline (${user.lastSeen || 'recently'})`;
+                statusText.className = "text-xs font-semibold text-zinc-400";
+            }
+
+            // Verified Icon
+            const verIcon = document.getElementById('modal-verified');
+            if (user.verified) verIcon.classList.remove('hidden');
+            else verIcon.classList.add('hidden');
+
+            // Tags
+            const tagsContainer = document.getElementById('modal-tags');
+            const allTags = [user.tribe, ...user.tags];
+            tagsContainer.innerHTML = allTags.map((tag, idx) => `
+                <span class="px-3 py-1 rounded-full text-xs font-semibold ${idx === 0 ? 'bg-brand-yellow/20 text-brand-yellow border border-brand-yellow/40' : 'bg-brand-surface text-zinc-300'}">
+                    ${tag}
+                </span>
+            `).join('');
+
+            updateModalFavIcon(user.favorite);
+
+            const modal = document.getElementById('profile-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profile-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function updateModalFavIcon(isFav) {
+            const btn = document.getElementById('modal-fav-btn');
+            btn.innerHTML = isFav 
+                ? '<i class="fa-solid fa-star text-brand-yellow"></i>' 
+                : '<i class="fa-regular fa-star text-white"></i>';
+        }
+
+        function toggleFavoriteCurrent() {
+            const user = mockUsers.find(u => u.id === activeProfileUserId);
+            if (!user) return;
+            user.favorite = !user.favorite;
+            updateModalFavIcon(user.favorite);
+            renderGrid();
+            renderFavesGrid();
+            showToast(user.favorite ? `Added ${user.name} to Favorites ⭐` : `Removed ${user.name} from Favorites`);
+        }
+
+        function sendTap() {
+            const user = mockUsers.find(u => u.id === activeProfileUserId);
+            if (!user) return;
+            
+            const tapBtn = document.getElementById('tap-btn');
+            tapBtn.classList.add('bg-brand-yellow', 'text-black');
+            tapBtn.classList.remove('bg-brand-surface', 'text-brand-yellow');
+            
+            setTimeout(() => {
+                tapBtn.classList.remove('bg-brand-yellow', 'text-black');
+                tapBtn.classList.add('bg-brand-surface', 'text-brand-yellow');
+            }, 600);
+
+            // Add tap to conversation
+            addMessageToConversation(user.id, 'me', '🔥 Sent a Tap!', true);
+            showToast(`You tapped ${user.name}! 🔥`);
+        }
+
+        function startChatFromModal() {
+            const input = document.getElementById('modal-quick-msg');
+            const text = input.value.trim();
+            if (!text) {
+                // Just open chat if empty
+                closeProfileModal();
+                openChat(activeProfileUserId);
+                return;
+            }
+            addMessageToConversation(activeProfileUserId, 'me', text);
+            input.value = '';
+            closeProfileModal();
+            openChat(activeProfileUserId);
+        }
+
+        // ==========================================
+        // CHAT MODAL LOGIC
+        // ==========================================
+        function openChat(userId) {
+            const user = mockUsers.find(u => u.id === userId);
+            if (!user) return;
+            activeChatUserId = userId;
+
+            // Mark as read
+            let conv = conversations.find(c => c.userId === userId);
+            if (!conv) {
+                conv = { userId: userId, unread: false, messages: [] };
+                conversations.unshift(conv);
+            } else {
+                conv.unread = false;
+            }
+            updateUnreadBadges();
+            renderInbox();
+
+            // Populate Header
+            document.getElementById('chat-user-img').src = user.img;
+            document.getElementById('chat-user-name').innerText = user.name;
+            document.getElementById('chat-user-dist').innerText = user.distance;
+            document.getElementById('chat-user-status').innerText = user.online ? 'Online now' : `Last seen ${user.lastSeen || 'recently'}`;
+            
+            const onlineDot = document.getElementById('chat-user-online');
+            if (user.online) onlineDot.classList.remove('hidden');
+            else onlineDot.classList.add('hidden');
+
+            renderChatMessages();
+
+            const modal = document.getElementById('chat-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeChatModal() {
+            const modal = document.getElementById('chat-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            activeChatUserId = null;
+        }
+
+        function openProfileFromChat() {
+            const id = activeChatUserId;
+            closeChatModal();
+            openProfile(id);
+        }
+
+        function renderChatMessages() {
+            const container = document.getElementById('chat-messages');
+            const conv = conversations.find(c => c.userId === activeChatUserId);
+            if (!conv || conv.messages.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 text-zinc-500 text-xs">
+                        <p>Start the conversation! Say hi or send a Tap.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = conv.messages.map(msg => {
+                const isMe = msg.sender === 'me';
+                if (msg.isLocation) {
+                    return `
+                        <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                            <div class="max-w-[75%] rounded-2xl overflow-hidden border border-zinc-700 bg-brand-card">
+                                <div class="h-24 bg-zinc-800 flex items-center justify-center relative">
+                                    <i class="fa-solid fa-map-location-dot text-3xl text-brand-yellow"></i>
+                                    <span class="absolute bottom-1.5 right-2 text-[10px] bg-black/70 px-1.5 py-0.5 rounded text-zinc-300">Exact Location</span>
+                                </div>
+                                <div class="p-2.5 text-xs font-semibold text-white flex items-center gap-1.5">
+                                    <i class="fa-solid fa-location-dot text-brand-yellow"></i> Shared Pin Nearby
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-zinc-500 mt-1 px-1">${msg.time}</span>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                        <div class="max-w-[78%] px-3.5 py-2.5 rounded-2xl text-sm ${
+                            msg.isTap 
+                                ? 'bg-brand-yellow/20 border border-brand-yellow/50 text-brand-yellow font-bold'
+                                : isMe 
+                                    ? 'bg-brand-yellow text-black font-medium rounded-br-sm' 
+                                    : 'bg-brand-surface text-white rounded-bl-sm'
+                        }">
+                            ${msg.text}
+                        </div>
+                        <span class="text-[10px] text-zinc-500 mt-1 px-1">${msg.time}</span>
+                    </div>
+                `;
+            }).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addMessageToConversation(userId, sender, text, isTap = false, isLocation = false) {
+            let conv = conversations.find(c => c.userId === userId);
+            if (!conv) {
+                conv = { userId: userId, unread: false, messages: [] };
+                conversations.unshift(conv);
+            } else {
+                // Move conversation to top
+                conversations = [conv, ...conversations.filter(c => c.userId !== userId)];
+            }
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            conv.messages.push({ sender, text, time: timeStr, isTap, isLocation });
+            if (activeChatUserId === userId) {
+                renderChatMessages();
+            } else if (sender === 'them') {
+                conv.unread = true;
+                updateUnreadBadges();
+            }
+            renderInbox();
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text || !activeChatUserId) return;
+
+            const targetUserId = activeChatUserId;
+            addMessageToConversation(targetUserId, 'me', text);
+            input.value = '';
+
+            // Simulate realistic reply
+            simulateReply(targetUserId);
+        }
+
+        function sendQuickEmoji(emoji) {
+            if (!activeChatUserId) return;
+            const targetUserId = activeChatUserId;
+            addMessageToConversation(targetUserId, 'me', emoji);
+            simulateReply(targetUserId);
+        }
+
+        function sendLocationPin() {
+            if (!activeChatUserId) return;
+            addMessageToConversation(activeChatUserId, 'me', 'Shared Location', false, true);
+            showToast('Location pin shared 📍');
+        }
+
+        function simulateReply(userId) {
+            const user = mockUsers.find(u => u.id === userId);
+            if (!user) return;
+
+            const indicator = document.getElementById('typing-indicator');
+            const typingName = document.getElementById('typing-name');
+            typingName.innerText = `${user.name} is typing...`;
+            indicator.classList.remove('hidden');
+
+            const replies = [
+                "Hey! What's up? 😊",
+                "Haha nice! How's your day going?",
+                "I'm free later tonight if you wanna grab a drink 🍻",
+                "Not far from you at all! What are you into?",
+                "Sounds good to me 👍"
+            ];
+            const randomReply = replies[Math.floor(Math.random() * replies.length)];
+
+            setTimeout(() => {
+                indicator.classList.add('hidden');
+                addMessageToConversation(userId, 'them', randomReply);
+            }, 1600);
+        }
+
+        // ==========================================
+        // EXPLORE & MY PROFILE MODALS
+        // ==========================================
+        function toggleSearchModal() {
+            const modal = document.getElementById('search-modal');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+        }
+
+        function changeLocation(city) {
+            toggleSearchModal();
+            currentCity = city;
+            document.getElementById('map-city-label').innerText = city;
+            document.getElementById('google-map-iframe').src = `https://maps.google.com/maps?q=${encodeURIComponent(city)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+            document.getElementById('open-gmaps-external').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(city)}`;
+
+            // Shuffle distances slightly to simulate exploring new area
+            mockUsers.forEach(u => {
+                const randDist = Math.floor(Math.random() * 900) + 50;
+                u.distNum = randDist;
+                u.distance = `${randDist}m`;
+            });
+            renderGrid();
+            showToast(`Exploring ${city} on Google Maps 🌍`);
+        }
+
+        function openMyProfile() {
+            const modal = document.getElementById('my-profile-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeMyProfile() {
+            const modal = document.getElementById('my-profile-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveMyProfile() {
+            closeMyProfile();
+            showToast('Profile updated ✅');
+        }
+
+        // ==========================================
+        // TOAST NOTIFICATION HELPER
+        // ==========================================
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-msg');
+            msgEl.innerText = message;
+            
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
